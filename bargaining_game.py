@@ -145,6 +145,12 @@ class BargainingGame:
 
         # Offers are available in all rounds except the last
         if state.round_num < NUM_ROUNDS - 1:
+            # Compute accept value if there's a pending offer (for pruning)
+            accept_value = None
+            if player_type is not None and state.last_offer is not None:
+                last_offer = state.last_offer
+                accept_value = player_type.bundle_value(last_offer[0], last_offer[1])
+
             for offer in self.offers:
                 # If we know our type, only include offers where we keep >= walk_value
                 if player_type is not None:
@@ -152,8 +158,17 @@ class BargainingGame:
                     keep_n1 = TOTAL_ITEMS[0] - offer[0]
                     keep_n2 = TOTAL_ITEMS[1] - offer[1]
                     keep_value = player_type.bundle_value(keep_n1, keep_n2)
-                    if keep_value >= player_type.walk_value:
-                        actions.append(f"offer_{offer[0]}{offer[1]}")
+
+                    # Prune 1: Must keep at least walk_value
+                    if keep_value < player_type.walk_value:
+                        continue
+
+                    # Prune 2: If there's a pending offer, counter-offer must be
+                    # strictly better than accepting. Otherwise just accept.
+                    if accept_value is not None and keep_value <= accept_value:
+                        continue
+
+                    actions.append(f"offer_{offer[0]}{offer[1]}")
                 else:
                     actions.append(f"offer_{offer[0]}{offer[1]}")
 

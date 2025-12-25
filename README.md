@@ -146,6 +146,7 @@ Example: "p0|(1,0.5,2)|offer_11,offer_02"
 
 We prune dominated actions to reduce the game tree:
 - **Offers**: Only include offers where we keep ≥ walk_value
+- **Counter-offers**: Only include counter-offers that are strictly better than accepting the current offer (otherwise, just accept)
 - **Accept**: Only include if offered bundle ≥ walk_value
 
 This reduces the action space by ~30% on average, with larger reductions for high walk-away value types.
