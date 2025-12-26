@@ -340,9 +340,9 @@ class ExternalSamplingCFR:
                 avg_strategy = self.get_average_strategy()
                 s0 = {k: v for k, v in avg_strategy.items() if k.startswith("p0|")}
                 s1 = {k: v for k, v in avg_strategy.items() if k.startswith("p1|")}
-                # Quick exploitability estimate
+                # Exact exploitability (enumerates all 729 type profiles)
                 from cfr_solver import compute_exploitability
-                e0, e1, total = compute_exploitability(self.game, s0, s1, num_samples=50)
+                e0, e1, total = compute_exploitability(self.game, s0, s1)
                 print(f"    Exploitability at iter {iteration+1}: {total:.4f}")
 
         avg_strategy = self.get_average_strategy()
@@ -436,21 +436,26 @@ class BestResponseComputer:
         self,
         br_player: int,
         opponent_strategy: Dict[str, Dict[str, float]],
-        num_samples: int = 200
+        type_profiles: Optional[List[Tuple[PlayerType, PlayerType]]] = None
     ) -> float:
         """
         Compute expected utility of best response for br_player.
 
-        Uses sampling over type profiles for efficiency.
+        Args:
+            br_player: Player computing best response
+            opponent_strategy: Fixed opponent strategy
+            type_profiles: List of type profiles to evaluate. If None, enumerates all.
+
+        Returns:
+            Expected utility when br_player plays best response
         """
+        if type_profiles is None:
+            # Enumerate all type profiles
+            type_profiles = [(t0, t1) for t0 in self.types for t1 in self.types]
+
         total_value = 0.0
-        num_types = len(self.types)
 
-        for _ in range(num_samples):
-            type0 = self.types[np.random.randint(num_types)]
-            type1 = self.types[np.random.randint(num_types)]
-            types = (type0, type1)
-
+        for types in type_profiles:
             cache: Dict[Tuple[str, int, int], float] = {}
             value = self.compute_best_response_value(
                 self.game.initial_state(),
@@ -461,14 +466,13 @@ class BestResponseComputer:
             )
             total_value += value
 
-        return total_value / num_samples
+        return total_value / len(type_profiles)
 
 
 def compute_exploitability(
     game: BargainingGame,
     strategy0: Dict[str, Dict[str, float]],
     strategy1: Dict[str, Dict[str, float]],
-    num_samples: int = 200,
     verbose: bool = False
 ) -> Tuple[float, float, float]:
     """
@@ -477,11 +481,12 @@ def compute_exploitability(
     Exploitability measures how much each player can gain by deviating
     to their best response. For a Nash equilibrium, exploitability is 0.
 
+    Enumerates all 729 type profiles for exact computation (no sampling variance).
+
     Args:
         game: The bargaining game
         strategy0: Player 0's strategy
         strategy1: Player 1's strategy
-        num_samples: Number of type profiles to sample
         verbose: Print progress
 
     Returns:
@@ -492,37 +497,35 @@ def compute_exploitability(
     """
     br_computer = BestResponseComputer(game)
 
-    # Current utilities
+    # Enumerate all type profiles (27 * 27 = 729)
+    type_profiles = [(t0, t1) for t0 in game.types for t1 in game.types]
+
+    # Current utilities (exact computation over all profiles)
     if verbose:
-        print("  Computing current utilities...")
+        print("  Computing current utilities (729 type profiles)...")
 
     current_u0 = 0.0
     current_u1 = 0.0
-    num_types = len(game.types)
 
-    for _ in range(num_samples):
-        type0 = game.types[np.random.randint(num_types)]
-        type1 = game.types[np.random.randint(num_types)]
-        types = (type0, type1)
-
+    for types in type_profiles:
         u0, u1 = game.play_with_strategies(strategy0, strategy1, types)
         current_u0 += u0
         current_u1 += u1
 
-    current_u0 /= num_samples
-    current_u1 /= num_samples
+    current_u0 /= len(type_profiles)
+    current_u1 /= len(type_profiles)
 
     if verbose:
         print(f"    Current utilities: P0={current_u0:.4f}, P1={current_u1:.4f}")
 
-    # Best response utilities
+    # Best response utilities (using same type profiles)
     if verbose:
         print("  Computing P0 best response utility...")
-    br_u0 = br_computer.compute_best_response_utility(0, strategy1, num_samples)
+    br_u0 = br_computer.compute_best_response_utility(0, strategy1, type_profiles)
 
     if verbose:
         print("  Computing P1 best response utility...")
-    br_u1 = br_computer.compute_best_response_utility(1, strategy0, num_samples)
+    br_u1 = br_computer.compute_best_response_utility(1, strategy0, type_profiles)
 
     if verbose:
         print(f"    Best response utilities: P0={br_u0:.4f}, P1={br_u1:.4f}")
@@ -542,11 +545,11 @@ def main():
 
     game = BargainingGame()
 
-    print("\nTraining with External Sampling CFR+ (1000000 iterations)...")
+    print("\nTraining with External Sampling CFR+ (10000000 iterations)...")
     print("(Using action pruning + linear averaging + regret flooring)")
     solver = ExternalSamplingCFR(game)
     strategy0, strategy1 = solver.train(
-        num_iterations=1000000,
+        num_iterations=10000000,
         verbose=True,
         eval_every=200000  # Evaluate exploitability every 200000 iterations
     )
@@ -557,7 +560,7 @@ def main():
 
     # Save strategies (compressed)
     metadata = {
-        "iterations": 1000000,
+        "iterations": 10000000,
         "algorithm": "External Sampling CFR+",
         "p0_info_sets": len(strategy0),
         "p1_info_sets": len(strategy1)
@@ -566,7 +569,7 @@ def main():
 
     print("\nComputing exploitability (measures distance to Nash equilibrium)...")
     exploit0, exploit1, total_exploit = compute_exploitability(
-        game, strategy0, strategy1, num_samples=500, verbose=True
+        game, strategy0, strategy1, verbose=True
     )
     print(f"\nExploitability results:")
     print(f"  P0 can gain by deviating: {exploit0:.4f}")
@@ -591,7 +594,7 @@ def main():
     uniform0 = {}  # Empty = uniform
     uniform1 = {}
     exploit0_u, exploit1_u, total_exploit_u = compute_exploitability(
-        game, uniform0, uniform1, num_samples=200, verbose=True
+        game, uniform0, uniform1, verbose=True
     )
     print(f"\nUniform strategy exploitability: {total_exploit_u:.4f}")
     print(f"CFR strategy exploitability: {total_exploit:.4f}")

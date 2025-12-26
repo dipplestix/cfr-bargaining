@@ -151,30 +151,39 @@ We prune dominated actions to reduce the game tree:
 
 This reduces the action space by ~30% on average, with larger reductions for high walk-away value types.
 
-### Training Progress (1M iterations, with pruning)
+### Training Progress (10M iterations, with pruning)
 
-| Iterations | Exploitability* |
-|------------|-----------------|
-| 200,000    | 0.00           |
-| 400,000    | 0.39           |
-| 600,000    | 0.28           |
-| 800,000    | 0.77           |
-| 1,000,000  | 0.08           |
+| Iterations | Exploitability |
+|------------|----------------|
+| 200,000    | 0.1470         |
+| 400,000    | 0.1360         |
+| 600,000    | 0.1319         |
+| 800,000    | 0.1255         |
+| 1,000,000  | 0.1249         |
+| 2,000,000  | 0.1206         |
+| 3,000,000  | 0.1178         |
+| 4,000,000  | 0.1167         |
+| 5,000,000  | 0.1173         |
+| 6,000,000  | 0.1166         |
+| 7,000,000  | 0.1150         |
+| 8,000,000  | 0.1142         |
+| 9,000,000  | 0.1137         |
+| 10,000,000 | 0.1148         |
 
-*Estimated with 50 samples during training (high variance due to sampling)
+Exploitability computed exactly over all 729 type profiles (no sampling variance).
 
-### Final Results (500 sample evaluation)
+### Final Results (exact evaluation over all 729 type profiles)
 
 | Metric | Value |
 |--------|-------|
-| **Total Exploitability** | **0.11** |
-| P0 exploitability | 0.02 |
-| P1 exploitability | 0.09 |
-| P0 equilibrium utility | 1.66 |
-| P1 equilibrium utility | 1.47 |
-| P0 info sets discovered | 91,809 |
-| P1 info sets discovered | 661,242 |
-| Strategy file size | 18 MB (gzipped) |
+| **Total Exploitability** | **0.1148** |
+| P0 exploitability | 0.0710 |
+| P1 exploitability | 0.0438 |
+| P0 equilibrium utility | 1.6369 |
+| P1 equilibrium utility | 1.5417 |
+| P0 info sets discovered | 20,731 |
+| P1 info sets discovered | 85,903 |
+| Strategy file size | ~3 MB (gzipped) |
 
 ### Effect of Pruning
 
@@ -189,14 +198,14 @@ This reduces the action space by ~30% on average, with larger reductions for hig
 
 | Strategy | Exploitability |
 |----------|----------------|
-| Uniform Random | 0.30 |
-| CFR (1M iter) | 0.11 |
-| **Improvement** | **63%** |
+| Uniform Random | 0.4901 |
+| CFR (10M iter) | 0.1148 |
+| **Improvement** | **77%** |
 
 ### Interpreting Exploitability
 
 - **Exploitability = 0**: Exact Nash equilibrium
-- **Exploitability = 0.11**: Neither player can gain more than ~0.09 by deviating to best response
+- **Exploitability = 0.1148**: P0 can gain at most 0.071, P1 can gain at most 0.044 by deviating to best response
 - The CFR strategy is an **approximate Nash equilibrium**
 
 ## Sample Strategies
@@ -231,9 +240,9 @@ Key strategic patterns:
 
 ### Game-Theoretic Insights
 
-With pruning, the game tree is reduced by ~50%. The near-Nash equilibrium (exploitability 0.11) shows:
-- Both players get similar utility (P0: 1.66, P1: 1.47)
-- P0 has a moderate first-mover advantage (~0.19 utility difference)
+With pruning, the game tree is reduced significantly. The near-Nash equilibrium (exploitability 0.1148) shows:
+- Both players get similar utility (P0: 1.64, P1: 1.54)
+- P0 has a slight first-mover advantage (~0.10 utility difference)
 - Walk-away values provide significant bargaining power
 - Dominated actions are never played in equilibrium
 
@@ -241,7 +250,7 @@ With pruning, the game tree is reduced by ~50%. The near-Nash equilibrium (explo
 
 ### Loading Pre-trained Strategy
 
-A pre-trained Nash equilibrium strategy (1M iterations) is saved in `nash_equilibrium.json.gz` (18MB compressed):
+A pre-trained Nash equilibrium strategy (10M iterations) is saved in `nash_equilibrium.json.gz`:
 
 ```python
 from bargaining_game import BargainingGame
@@ -274,10 +283,8 @@ strategy0, strategy1 = solver.train(num_iterations=1000000)
 save_strategies(strategy0, strategy1, "my_strategy.json",
                 metadata={"iterations": 1000000})
 
-# Evaluate exploitability
-exploit0, exploit1, total = compute_exploitability(
-    game, strategy0, strategy1, num_samples=500
-)
+# Evaluate exploitability (exact, enumerates all 729 type profiles)
+exploit0, exploit1, total = compute_exploitability(game, strategy0, strategy1)
 print(f"Exploitability: {total:.4f}")
 ```
 
