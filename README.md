@@ -1,6 +1,8 @@
-# Bargaining Game Nash Equilibrium Solver
+# Bargaining Game Equilibrium Solver
 
-Finding Nash equilibrium in a two-player bargaining game using Counterfactual Regret Minimization (CFR).
+Finding approximate equilibrium in a two-player bargaining game using Counterfactual Regret Minimization (CFR).
+
+**Note on equilibrium concepts**: This is a general-sum game, so CFR converges to a Coarse Correlated Equilibrium (CCE). However, since we use independent behavioral strategies, an ε-CCE is equivalent to an ε-Nash equilibrium. Our exploitability metric measures the maximum gain from unilateral deviation, which characterizes both.
 
 ## The Bargaining Game
 
@@ -37,7 +39,7 @@ The game has ~170K info sets for P0 and ~560K for P1, making direct methods (seq
 CFR works by:
 1. Tracking **regret** for each action at each information set
 2. Using **regret matching** to compute strategies
-3. Averaging strategies over iterations to converge to Nash equilibrium
+3. Averaging strategies over iterations to converge to equilibrium (CCE/Nash)
 
 ### Regret Matching
 
@@ -204,9 +206,16 @@ Exploitability computed exactly over all 729 type profiles (no sampling variance
 
 ### Interpreting Exploitability
 
-- **Exploitability = 0**: Exact Nash equilibrium
-- **Exploitability = 0.1148**: P0 can gain at most 0.071, P1 can gain at most 0.044 by deviating to best response
-- The CFR strategy is an **approximate Nash equilibrium**
+Exploitability measures the maximum gain from unilateral deviation:
+- **exploit_i = BR_utility_i - current_utility_i**
+- For independent strategies, this characterizes both ε-CCE and ε-Nash
+
+Our results:
+- **P0 exploitability: 0.0710** — P0 can gain at most 0.071 by deviating
+- **P1 exploitability: 0.0438** — P1 can gain at most 0.044 by deviating
+- **ε = max(0.0710, 0.0438) = 0.0710**
+
+This means we have found a **0.071-CCE** (equivalently, a **0.071-Nash equilibrium**).
 
 ## Sample Strategies
 

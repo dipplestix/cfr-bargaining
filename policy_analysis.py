@@ -1,6 +1,6 @@
 import marimo
 
-__generated_with = "0.10.12"
+__generated_with = "0.18.4"
 app = marimo.App(width="medium")
 
 
@@ -12,14 +12,17 @@ def _():
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
-        # Nash Equilibrium Policy Analysis
+    mo.md(r"""
+    # Equilibrium Policy Analysis
 
-        This notebook explores the trained CFR policy for the bargaining game.
-        The policy was trained for 10 million iterations and achieves an exploitability of 0.1148.
-        """
-    )
+    This notebook explores the trained CFR policy for the bargaining game.
+    The policy was trained for 10 million iterations.
+
+    **Equilibrium concept**: Since this is a general-sum game, CFR converges to a
+    Coarse Correlated Equilibrium (CCE). For independent strategies like ours,
+    ε-CCE is equivalent to ε-Nash. With P0 exploitability = 0.071 and P1 = 0.044,
+    we have a **0.071-CCE** (equivalently, **0.071-Nash**).
+    """)
     return
 
 
@@ -34,18 +37,16 @@ def _():
     print(f"Loaded strategy trained for {metadata.get('iterations', 'unknown')} iterations")
     print(f"P0 info sets: {len(strategy0)}")
     print(f"P1 info sets: {len(strategy1)}")
-    return PlayerType, game, load_strategies, metadata, strategy0, strategy1
+    return PlayerType, game, strategy0, strategy1
 
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
-        ## Helper Functions
+    mo.md(r"""
+    ## Helper Functions
 
-        Let's define some helpers to query and display the policy.
-        """
-    )
+    Let's define some helpers to query and display the policy.
+    """)
     return
 
 
@@ -79,23 +80,20 @@ def _(PlayerType, game, strategy0, strategy1):
         for action in history:
             state = game.step(state, action)
         return game.get_actions(state, player_type)
-
     return format_policy, get_policy, get_valid_actions
 
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
-        ---
-        ## Example 1: The "All or Nothing" Type (1, 1, 4)
+    mo.md(r"""
+    ---
+    ## Example 1: The "All or Nothing" Type (1, 1, 4)
 
-        This player values both item types at 1, giving a maximum possible value of 2×1 + 2×1 = 4.
-        Their walk-away value is also 4, meaning they will **only accept deals where they get everything**.
+    This player values both item types at 1, giving a maximum possible value of 2×1 + 2×1 = 4.
+    Their walk-away value is also 4, meaning they will **only accept deals where they get everything**.
 
-        This creates an extreme strategic situation.
-        """
-    )
+    This creates an extreme strategic situation.
+    """)
     return
 
 
@@ -126,33 +124,29 @@ def _(PlayerType, format_policy, get_policy, get_valid_actions):
         print(f"  Valid actions: {valid}")
         print(format_policy(probs))
         print()
-    return all_or_nothing, info_set, offer, offer_desc, probs, valid
-
-
-@app.cell
-def _(mo):
-    mo.md(
-        r"""
-        **Insight**: This type is extremely constrained:
-        - Can only make `offer_00` (demand everything) since giving anything away leaves them below walk_value
-        - Can only accept `offer_22` (receiving everything)
-        - The 50/50 split reflects true indifference between walking and their only viable alternative
-        """
-    )
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
-        ---
-        ## Example 2: The "Item Specialist" Type (1, 0, 2)
+    mo.md(r"""
+    **Insight**: This type is extremely constrained:
+    - Can only make `offer_00` (demand everything) since giving anything away leaves them below walk_value
+    - Can only accept `offer_22` (receiving everything)
+    - The 50/50 split reflects true indifference between walking and their only viable alternative
+    """)
+    return
 
-        This player only values item type 1 (v1=1, v2=0), with walk_value=2.
-        They're indifferent to item type 2 entirely.
-        """
-    )
+
+@app.cell
+def _(mo):
+    mo.md(r"""
+    ---
+    ## Example 2: The "Item Specialist" Type (1, 0, 2)
+
+    This player only values item type 1 (v1=1, v2=0), with walk_value=2.
+    They're indifferent to item type 2 entirely.
+    """)
     return
 
 
@@ -181,33 +175,29 @@ def _(PlayerType, format_policy, get_policy, get_valid_actions):
     print(f"  Accept value: {item1_specialist.bundle_value(2, 0)} = walk_value")
     print(f"  Valid actions: {valid2}")
     print(format_policy(probs2))
-    return info_set2, item1_specialist, probs2, valid2
-
-
-@app.cell
-def _(mo):
-    mo.md(
-        r"""
-        **Insight**: After receiving an offer that exactly matches their walk_value:
-        - All counter-offers are pruned (none strictly better than accepting)
-        - Only walk and accept remain, both giving value 2
-        - 50/50 split reflects true game-theoretic indifference
-        """
-    )
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
-        ---
-        ## Example 3: The "Flexible Negotiator" Type (0.5, 0.5, 0)
+    mo.md(r"""
+    **Insight**: After receiving an offer that exactly matches their walk_value:
+    - All counter-offers are pruned (none strictly better than accepting)
+    - Only walk and accept remain, both giving value 2
+    - 50/50 split reflects true game-theoretic indifference
+    """)
+    return
 
-        This player has low valuations (0.5 each) and zero walk-away value.
-        They're highly flexible and willing to make many different deals.
-        """
-    )
+
+@app.cell
+def _(mo):
+    mo.md(r"""
+    ---
+    ## Example 3: The "Flexible Negotiator" Type (0.5, 0.5, 0)
+
+    This player has low valuations (0.5 each) and zero walk-away value.
+    They're highly flexible and willing to make many different deals.
+    """)
     return
 
 
@@ -236,33 +226,29 @@ def _(PlayerType, format_policy, get_policy, get_valid_actions):
     print(f"As P0 after {history}:")
     print(f"  Valid actions: {valid3}")
     print(format_policy(probs3))
-    return flexible, history, info_set3, probs3, valid3
-
-
-@app.cell
-def _(mo):
-    mo.md(
-        r"""
-        **Insight**: With walk_value=0, this type:
-        - Has access to all possible offers (no pruning based on keeping value)
-        - Shows more complex mixed strategies
-        - Demonstrates how the Nash equilibrium balances multiple viable options
-        """
-    )
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
-        ---
-        ## Example 4: Same Situation, Different Types
+    mo.md(r"""
+    **Insight**: With walk_value=0, this type:
+    - Has access to all possible offers (no pruning based on keeping value)
+    - Shows more complex mixed strategies
+    - Demonstrates how the Nash equilibrium balances multiple viable options
+    """)
+    return
 
-        How do different player types respond to the same offer?
-        Let's see how various types respond as P1 after P0 offers `offer_11` (1 of each item).
-        """
-    )
+
+@app.cell
+def _(mo):
+    mo.md(r"""
+    ---
+    ## Example 4: Same Situation, Different Types
+
+    How do different player types respond to the same offer?
+    Let's see how various types respond as P1 after P0 offers `offer_11` (1 of each item).
+    """)
     return
 
 
@@ -290,74 +276,72 @@ def _(PlayerType, format_policy, get_policy, get_valid_actions):
         valid4 = get_valid_actions(ptype, ["offer_11"])
         print(f"  Valid actions: {valid4}")
         print(format_policy(probs4))
-    return accept_val, probs4, ptype, types_to_compare, valid4
-
-
-@app.cell
-def _(mo):
-    mo.md(
-        r"""
-        **Insight**: The same offer elicits very different responses:
-        - Types with `accept_value < walk_value` can't accept (pruned)
-        - Types with high walk values have fewer counter-offer options
-        - Item specialists (1,0,_) and (0,1,_) value the offer at only 1, not 2
-        """
-    )
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
-        ---
-        ## Example 5: Deep Negotiation Chains
+    mo.md(r"""
+    **Insight**: The same offer elicits very different responses:
+    - Types with `accept_value < walk_value` can't accept (pruned)
+    - Types with high walk values have fewer counter-offer options
+    - Item specialists (1,0,_) and (0,1,_) value the offer at only 1, not 2
+    """)
+    return
 
-        What happens in extended negotiations? Let's trace a 4-round negotiation.
-        """
-    )
+
+@app.cell
+def _(mo):
+    mo.md(r"""
+    ---
+    ## Example 5: Deep Negotiation Chains
+
+    What happens in extended negotiations? Let's trace a 4-round negotiation.
+    """)
     return
 
 
 @app.cell
 def _(PlayerType, format_policy, get_policy):
-    # Trace a negotiation between two specific types
-    p0_type = PlayerType(1, 0.5, 1)
-    p1_type = PlayerType(0.5, 1, 1)
+    def _():
+        # Trace a negotiation between two specific types
+        p0_type = PlayerType(1, 0.5, 1)
+        p1_type = PlayerType(0.5, 1, 1)
 
-    print(f"P0 type: {p0_type} (prefers item type 1)")
-    print(f"P1 type: {p1_type} (prefers item type 2)")
-    print()
-
-    histories = [
-        ("start", 0),
-        ("offer_20", 1),           # P0 offers 2 of item1, 0 of item2
-        ("offer_20,offer_02", 0),  # P1 counters with 0 of item1, 2 of item2
-        ("offer_20,offer_02,offer_21", 1),  # P0 counters
-        ("offer_20,offer_02,offer_21,offer_12", 0),  # P1 counters
-    ]
-
-    for hist, player in histories:
-        ptype = p0_type if player == 0 else p1_type
-        probs5, info_set5 = get_policy(player, ptype, hist)
-
-        print(f"Round {len(hist.split(',')) if hist != 'start' else 0}: P{player} at '{hist}'")
-        if probs5:
-            print(format_policy(probs5))
-        else:
-            print("  (Info set not visited in training)")
+        print(f"P0 type: {p0_type} (prefers item type 1)")
+        print(f"P1 type: {p1_type} (prefers item type 2)")
         print()
-    return hist, histories, info_set5, p0_type, p1_type, player, probs5, ptype
+
+        histories = [
+            ("start", 0),
+            ("offer_20", 1),           # P0 offers 2 of item1, 0 of item2
+            ("offer_20,offer_02", 0),  # P1 counters with 0 of item1, 2 of item2
+            ("offer_20,offer_02,offer_21", 1),  # P0 counters
+            ("offer_20,offer_02,offer_21,offer_12", 0),  # P1 counters
+        ]
+
+        for hist, player in histories:
+            ptype = p0_type if player == 0 else p1_type
+            probs5, info_set5 = get_policy(player, ptype, hist)
+
+            print(f"Round {len(hist.split(',')) if hist != 'start' else 0}: P{player} at '{hist}'")
+            if probs5:
+                print(format_policy(probs5))
+            else:
+                print("  (Info set not visited in training)")
+        return print()
+
+
+    _()
+    return
 
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
-        ---
-        ## Summary Statistics
-        """
-    )
+    mo.md(r"""
+    ---
+    ## Summary Statistics
+    """)
     return
 
 
@@ -386,30 +370,28 @@ def _(strategy0, strategy1):
 
     analyze_strategy(strategy0, "Player 0")
     analyze_strategy(strategy1, "Player 1")
-    return (analyze_strategy,)
+    return
 
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
-        ---
+    mo.md(r"""
+    ---
 
-        ## Conclusion
+    ## Conclusion
 
-        The trained Nash equilibrium policy shows sophisticated behavior:
+    The trained equilibrium policy shows sophisticated behavior:
 
-        1. **Pruning is effective**: Dominated actions are never played, reducing the strategy space significantly
+    1. **Pruning is effective**: Dominated actions are never played, reducing the strategy space significantly
 
-        2. **Indifference is real**: When multiple actions give equal value, the policy correctly mixes 50/50
+    2. **Indifference is real**: When multiple actions give equal value, the policy correctly mixes 50/50
 
-        3. **Type-dependent strategies**: Different player types respond very differently to the same situations
+    3. **Type-dependent strategies**: Different player types respond very differently to the same situations
 
-        4. **Mixed strategies emerge**: Many info sets have non-trivial mixed strategies, indicating complex strategic trade-offs
+    4. **Mixed strategies emerge**: Many info sets have non-trivial mixed strategies, indicating complex strategic trade-offs
 
-        5. **Exploitability of 0.1148** means neither player can gain more than ~0.07 by deviating to their best response
-        """
-    )
+    5. **0.071-CCE / 0.071-Nash**: P0 can gain at most 0.071, P1 can gain at most 0.044 by deviating to best response
+    """)
     return
 
 

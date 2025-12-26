@@ -1,8 +1,10 @@
 """
 Counterfactual Regret Minimization (CFR) Solver
 
-CFR is an iterative algorithm that converges to Nash equilibrium
-in two-player zero-sum games, and approximate equilibrium in general-sum games.
+CFR is an iterative algorithm that converges to Nash equilibrium in two-player
+zero-sum games. In general-sum games (like this bargaining game), CFR converges
+to a Coarse Correlated Equilibrium (CCE). For independent behavioral strategies,
+an ε-CCE is equivalent to an ε-Nash equilibrium.
 """
 
 import numpy as np
@@ -479,7 +481,11 @@ def compute_exploitability(
     Compute exploitability of a strategy profile.
 
     Exploitability measures how much each player can gain by deviating
-    to their best response. For a Nash equilibrium, exploitability is 0.
+    to their best response:
+        exploit_i = BR_utility_i - current_utility_i
+
+    For independent strategies (like behavioral strategies), this characterizes
+    both ε-CCE and ε-Nash equilibrium, where ε = max(exploit0, exploit1).
 
     Enumerates all 729 type profiles for exact computation (no sampling variance).
 
@@ -567,7 +573,7 @@ def main():
     }
     save_strategies(strategy0, strategy1, "nash_equilibrium.json.gz", metadata)
 
-    print("\nComputing exploitability (measures distance to Nash equilibrium)...")
+    print("\nComputing exploitability (measures distance to CCE/Nash equilibrium)...")
     exploit0, exploit1, total_exploit = compute_exploitability(
         game, strategy0, strategy1, verbose=True
     )
@@ -575,7 +581,9 @@ def main():
     print(f"  P0 can gain by deviating: {exploit0:.4f}")
     print(f"  P1 can gain by deviating: {exploit1:.4f}")
     print(f"  Total exploitability: {total_exploit:.4f}")
-    print(f"  (Nash equilibrium has exploitability = 0)")
+    epsilon = max(exploit0, exploit1)
+    print(f"  ε = max(exploit0, exploit1) = {epsilon:.4f}")
+    print(f"  This is a {epsilon:.4f}-CCE (and {epsilon:.4f}-Nash for independent strategies)")
 
     # Show some sample strategies
     print("\nSample strategy (first 5 info sets for P0):")
